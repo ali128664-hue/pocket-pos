@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment and sensitive keys
+.env
+.env*.local
+.env.production
+**/.env
+**/.env*.local
+**/.env.production
+*.pem
+*.key
+*.jks
+*.p8
+*.p12
+
+# Expo & Metro
+.expo/
+**/.expo/
+dist/
+**/dist/
+web-build/
+**/web-build/
+.metro-health-check*
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Native build folders
+/ios
+/android
+**/ios
+**/android
+.kotlin/
