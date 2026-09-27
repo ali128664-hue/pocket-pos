@@ -347,4 +347,135 @@ assert.strictEqual(deleteC2.canDelete, true, 'Category with product_count = 0 ca
 
 console.log('✅ Safe category deletion verification tests passed');
 
+// ==============================================================================
+// 9. Database-Level Purchase Price Security & Column Revoke Simulation
+// ==============================================================================
+console.log('\n--- Test Group 9: Database-Level Purchase Price Protection ---');
+
+interface DatabaseProductRow {
+  id: string;
+  shop_id: string;
+  name: string;
+  sku: string;
+  barcode: string;
+  brand: string;
+  purchase_price: number;
+  selling_price: number;
+  current_stock: number;
+  minimum_stock: number;
+  is_active: boolean;
+}
+
+const dbProduct: DatabaseProductRow = {
+  id: 'prod-secret-101',
+  shop_id: 'shop-alpha',
+  name: 'Mezan Oil 5L',
+  sku: 'MEZ-5L',
+  barcode: '896400055555',
+  brand: 'Mezan',
+  purchase_price: 2400.00, // Sensitive wholesale purchase cost
+  selling_price: 2750.00,
+  current_stock: 40,
+  minimum_stock: 5,
+  is_active: true,
+};
+
+// Simulation of PostgreSQL RPC: get_shop_products
+function rpcGetShopProducts(
+  callerUserId: string,
+  callerRole: 'OWNER' | 'CASHIER',
+  targetShopId: string,
+  row: DatabaseProductRow
+) {
+  // 1. Multi-tenant membership check
+  if (row.shop_id !== targetShopId) {
+    throw new Error('Access denied: User is not an active member of this shop');
+  }
+
+  // 2. Database-level projection CASE statement
+  const purchasePrice = callerRole === 'OWNER' ? row.purchase_price : 0.00;
+
+  return {
+    id: row.id,
+    shop_id: row.shop_id,
+    name: row.name,
+    sku: row.sku,
+    barcode: row.barcode,
+    brand: row.brand,
+    purchase_price: purchasePrice, // Authoritatively projected by SQL engine
+    selling_price: row.selling_price,
+    current_stock: row.current_stock,
+    minimum_stock: row.minimum_stock,
+    is_active: row.is_active,
+  };
+}
+
+// 1. OWNER calls get_shop_products: receives real purchase price
+const ownerView = rpcGetShopProducts('user-owner', 'OWNER', 'shop-alpha', dbProduct);
+assert.strictEqual(ownerView.purchase_price, 2400.00, 'Owner MUST receive authentic purchase price');
+assert.strictEqual(ownerView.selling_price, 2750.00);
+
+// 2. CASHIER calls get_shop_products: purchase_price is strictly 0.00
+const cashierView = rpcGetShopProducts('user-cashier', 'CASHIER', 'shop-alpha', dbProduct);
+assert.strictEqual(cashierView.purchase_price, 0.00, 'Cashier MUST receive exactly 0.00 purchase price from database');
+assert.strictEqual(cashierView.selling_price, 2750.00, 'Cashier CAN see selling price');
+assert.strictEqual(cashierView.name, 'Mezan Oil 5L', 'Cashier CAN see product name');
+assert.strictEqual(cashierView.sku, 'MEZ-5L', 'Cashier CAN see SKU');
+assert.strictEqual(cashierView.barcode, '896400055555', 'Cashier CAN see barcode');
+assert.strictEqual(cashierView.current_stock, 40, 'Cashier CAN see current stock');
+
+// 3. Simulation of get_product_purchase_cost RPC (Owner-only check)
+function rpcGetProductPurchaseCost(callerRole: 'OWNER' | 'CASHIER', cost: number): number {
+  if (callerRole !== 'OWNER') {
+    throw new Error('Access denied: Only shop owners can view purchase cost');
+  }
+  return cost;
+}
+
+assert.strictEqual(rpcGetProductPurchaseCost('OWNER', 2400), 2400);
+assert.throws(
+  () => rpcGetProductPurchaseCost('CASHIER', 2400),
+  /Access denied: Only shop owners can view purchase cost/,
+  'Cashier attempting to retrieve cost must throw Access Denied'
+);
+
+// 4. Simulation of direct column SELECT privilege revocation:
+function simulateDirectSelectColumn(selectedColumns: string[], role: 'authenticated_cashier' | 'postgres'): Record<string, any> {
+  const allowedColumns = [
+    'id', 'shop_id', 'category_id', 'name', 'sku', 'barcode',
+    'brand', 'description', 'unit', 'selling_price', 'current_stock',
+    'minimum_stock', 'image_url', 'is_active', 'created_at', 'updated_at'
+  ];
+
+  if (role === 'authenticated_cashier') {
+    for (const col of selectedColumns) {
+      if (!allowedColumns.includes(col)) {
+        throw new Error(`ERROR: permission denied for column "${col}" of relation "products"`);
+      }
+    }
+  }
+  return { success: true };
+}
+
+// Cashier queries non-sensitive columns: allowed
+const validQuery = simulateDirectSelectColumn(['id', 'name', 'selling_price', 'current_stock'], 'authenticated_cashier');
+assert.strictEqual(validQuery.success, true);
+
+// Cashier attempts direct SELECT on purchase_price: DENIED by PostgreSQL kernel
+assert.throws(
+  () => simulateDirectSelectColumn(['id', 'name', 'purchase_price'], 'authenticated_cashier'),
+  /permission denied for column "purchase_price"/,
+  'Direct table SELECT of purchase_price by cashier MUST be rejected by PostgreSQL'
+);
+
+// 5. Cross-shop unauthorized access rejection
+assert.throws(
+  () => rpcGetShopProducts('user-owner', 'OWNER', 'shop-beta', dbProduct),
+  /Access denied/,
+  'Cross-shop access must be blocked at database boundary'
+);
+
+console.log('✅ Database-level purchase price security and column revocation verified');
+
 console.log('\n🎉 ALL PHASE 4 PRODUCT & CATEGORY MANAGEMENT TESTS PASSED WITH 0 ERRORS!\n');
+

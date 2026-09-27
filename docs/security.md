@@ -247,6 +247,7 @@ CREATE POLICY "Shop owners can delete expenses"
 - **Owner Role Restrictions**: Administrative tables (`expenses`) and financial updates strictly guarded with `public.is_shop_owner(shop_id)`.
 - **Atomic Operations**: All financial operations (`complete_sale_transaction`, `record_customer_payment`) execute as `SECURITY DEFINER` functions with transaction isolation, authoritative server pricing calculation, row-level locking (`FOR UPDATE`), and shop tenant membership checks.
 - **Phase 4 RLS Tightening**: Cashier product visibility restricted to active products only (`is_active = TRUE OR public.is_shop_owner(shop_id)`). Manual inventory adjustments secured by `public.is_shop_owner(p_shop_id)` check in `adjust_product_stock`.
-- **Purchase Price Hiding**: Cashiers receive sanitized zeroed purchase prices in client queries, preventing cost margin exposure at the counter.
+- **Database-Level Purchase Price Security**: Migration `20260927000004_phase4_purchase_price_security.sql` executes `REVOKE SELECT (purchase_price) ON public.products FROM authenticated, anon` and `REVOKE SELECT (unit_cost) ON public.sale_items FROM authenticated, anon`. Any direct API attempts to query purchase costs are aborted by the PostgreSQL kernel with permission denied. Real cost projection is restricted exclusively to confirmed `OWNER` users via `SECURITY DEFINER` RPC `get_shop_products`, `get_product_by_id`, and `get_product_purchase_cost`.
 - **Credential Hygiene**: Public anon key only in `.env.example`. Real `.env` excluded from version control.
+
 

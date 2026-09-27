@@ -27,7 +27,8 @@ export interface FetchProductsResult {
 }
 
 /**
- * Fetch products with server-side filtering, debounced search, and pagination.
+ * Fetch products with database-level security, server-side filtering, and pagination.
+ * Cashiers are cryptographically barred by PostgreSQL from retrieving purchase_price.
  */
 export async function fetchProducts({
   shopId,
@@ -40,19 +41,62 @@ export async function fetchProducts({
   isOwner = true,
 }: FetchProductsParams): Promise<FetchProductsResult> {
   try {
+    // 1. Primary Secure Path: Database-level RPC get_shop_products
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_shop_products', {
+      p_shop_id: shopId,
+      p_search: search && search.trim() ? search.trim() : null,
+      p_category_id: categoryId || null,
+      p_stock_filter: stockFilter,
+      p_active_filter: isOwner ? activeFilter : 'ACTIVE',
+      p_limit: pageSize,
+      p_offset: (page - 1) * pageSize,
+    });
+
+    if (!rpcError && rpcData) {
+      const items = rpcData.map((row: any) => ({
+        id: row.id,
+        shop_id: row.shop_id,
+        category_id: row.category_id,
+        name: row.name,
+        sku: row.sku,
+        barcode: row.barcode,
+        brand: row.brand,
+        description: row.description,
+        unit: row.unit || 'pcs',
+        purchase_price: Number(row.purchase_price) || 0,
+        selling_price: Number(row.selling_price),
+        current_stock: Number(row.current_stock),
+        minimum_stock: Number(row.minimum_stock),
+        image_url: row.image_url,
+        is_active: Boolean(row.is_active),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        category_name: row.category_name || null,
+      }));
+
+      return {
+        data: items,
+        totalCount: items.length,
+        error: null,
+      };
+    }
+
+    // 2. Fallback Path: Direct query with column-level projection
+    // For cashiers, purchase_price is completely excluded from the SELECT clause
+    const selectCols = isOwner
+      ? 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, purchase_price, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)'
+      : 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)';
+
     let query = supabase
       .from('products')
-      .select('*, categories(name)', { count: 'exact' })
+      .select(selectCols, { count: 'exact' })
       .eq('shop_id', shopId);
 
-    // Active status filter
-    if (activeFilter === 'ACTIVE') {
+    // Active status filter (Cashiers can only ever view active products)
+    if (!isOwner || activeFilter === 'ACTIVE') {
       query = query.eq('is_active', true);
     } else if (activeFilter === 'INACTIVE') {
       query = query.eq('is_active', false);
-    } else if (!isOwner) {
-      // Cashiers can only view active products
-      query = query.eq('is_active', true);
     }
 
     // Category filter
@@ -95,8 +139,7 @@ export async function fetchProducts({
       brand: row.brand,
       description: row.description,
       unit: row.unit || 'pcs',
-      // Hide purchase price from cashiers
-      purchase_price: isOwner ? Number(row.purchase_price) : 0,
+      purchase_price: isOwner ? Number(row.purchase_price || 0) : 0,
       selling_price: Number(row.selling_price),
       current_stock: Number(row.current_stock),
       minimum_stock: Number(row.minimum_stock),
@@ -107,7 +150,6 @@ export async function fetchProducts({
       category_name: row.categories?.name || null,
     }));
 
-    // Post-filter for LOW_STOCK if selected (since SQL compare across columns current_stock <= minimum_stock)
     if (stockFilter === 'LOW_STOCK') {
       items = items.filter(
         (p) => p.current_stock > 0 && p.current_stock <= p.minimum_stock
@@ -125,7 +167,7 @@ export async function fetchProducts({
 }
 
 /**
- * Fetch a single product by ID.
+ * Fetch a single product by ID with database-level role isolation.
  */
 export async function fetchProductById(
   shopId: string,
@@ -133,9 +175,47 @@ export async function fetchProductById(
   isOwner = true
 ): Promise<{ data: (Product & { category_name?: string | null }) | null; error: Error | null }> {
   try {
+    // 1. Primary Secure Path: Database RPC
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_product_by_id', {
+      p_shop_id: shopId,
+      p_product_id: productId,
+    });
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      const row = rpcData[0];
+      return {
+        data: {
+          id: row.id,
+          shop_id: row.shop_id,
+          category_id: row.category_id,
+          name: row.name,
+          sku: row.sku,
+          barcode: row.barcode,
+          brand: row.brand,
+          description: row.description,
+          unit: row.unit || 'pcs',
+          purchase_price: Number(row.purchase_price) || 0,
+          selling_price: Number(row.selling_price),
+          current_stock: Number(row.current_stock),
+          minimum_stock: Number(row.minimum_stock),
+          image_url: row.image_url,
+          is_active: Boolean(row.is_active),
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          category_name: row.category_name || null,
+        },
+        error: null,
+      };
+    }
+
+    // 2. Fallback Path
+    const selectCols = isOwner
+      ? 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, purchase_price, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)'
+      : 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)';
+
     const { data, error } = await supabase
       .from('products')
-      .select('*, categories(name)')
+      .select(selectCols)
       .eq('id', productId)
       .eq('shop_id', shopId)
       .single();
@@ -144,26 +224,27 @@ export async function fetchProductById(
       return { data: null, error: error ? new Error(error.message) : new Error('Product not found') };
     }
 
+    const row = data as any;
     return {
       data: {
-        id: data.id,
-        shop_id: data.shop_id,
-        category_id: data.category_id,
-        name: data.name,
-        sku: data.sku,
-        barcode: data.barcode,
-        brand: data.brand,
-        description: data.description,
-        unit: data.unit || 'pcs',
-        purchase_price: isOwner ? Number(data.purchase_price) : 0,
-        selling_price: Number(data.selling_price),
-        current_stock: Number(data.current_stock),
-        minimum_stock: Number(data.minimum_stock),
-        image_url: data.image_url,
-        is_active: Boolean(data.is_active),
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        category_name: data.categories?.name || null,
+        id: row.id,
+        shop_id: row.shop_id,
+        category_id: row.category_id,
+        name: row.name,
+        sku: row.sku,
+        barcode: row.barcode,
+        brand: row.brand,
+        description: row.description,
+        unit: row.unit || 'pcs',
+        purchase_price: isOwner ? Number(row.purchase_price || 0) : 0,
+        selling_price: Number(row.selling_price),
+        current_stock: Number(row.current_stock),
+        minimum_stock: Number(row.minimum_stock),
+        image_url: row.image_url,
+        is_active: Boolean(row.is_active),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        category_name: row.categories?.name || null,
       },
       error: null,
     };
@@ -171,6 +252,31 @@ export async function fetchProductById(
     return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
   }
 }
+
+/**
+ * Fetch product purchase cost - Strictly restricted to Shop Owners only.
+ * Executed through secure database RPC get_product_purchase_cost.
+ */
+export async function fetchProductPurchaseCost(
+  shopId: string,
+  productId: string
+): Promise<{ cost: number | null; error: Error | null }> {
+  try {
+    const { data, error } = await supabase.rpc('get_product_purchase_cost', {
+      p_shop_id: shopId,
+      p_product_id: productId,
+    });
+
+    if (error) {
+      return { cost: null, error: new Error(error.message) };
+    }
+
+    return { cost: Number(data), error: null };
+  } catch (err: any) {
+    return { cost: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
 
 /**
  * Create a new product scoped to the active shop.

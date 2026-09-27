@@ -629,7 +629,9 @@ $$;
 - **Phase 2 Migration**: `20260927000001_phase2_onboarding.sql` (Shops, shop_members, `create_shop_with_owner` RPC, tenant helper functions).
 - **Phase 3 Migration**: `20260927000002_phase3_database_foundation.sql` (Full core commerce schema, partial unique indexes, RLS enforcement on all tables, `shop_invoice_sequences`, atomic `complete_sale_transaction`, atomic `record_customer_payment`).
 - **Phase 4 Migration**: `20260927000003_phase4_product_management.sql` (Tightened cashier visibility RLS, composite search indexes, atomic `adjust_product_stock` RPC, `delete_category_safe` RPC, `get_shop_categories_with_count` RPC).
+- **Phase 4 Security Migration**: `20260927000004_phase4_purchase_price_security.sql` (Database-level column revocation on `products.purchase_price` and `sale_items.unit_cost`, secure RPC `get_shop_products`, secure RPC `get_product_by_id`, secure owner-only RPC `get_product_purchase_cost`).
 - **TypeScript Types**: Defined in `apps/mobile/src/types/database.ts`.
 - **Application Services**: Defined in `apps/mobile/src/services/sales.ts`, `apps/mobile/src/services/product.ts`, `apps/mobile/src/services/category.ts`.
 - **Automated Verification**: Full regression test suite in `apps/mobile/src/__tests__/product-management.test.ts`.
+
 
