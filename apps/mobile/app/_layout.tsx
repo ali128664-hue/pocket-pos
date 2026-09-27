@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ShopProvider, useShop } from '../src/context/ShopContext';
+import { CartProvider } from '../src/context/CartContext';
 import { LoadingSpinner } from '../src/components/ui/LoadingSpinner';
 
 function RootNavigation() {
@@ -49,6 +50,7 @@ function RootNavigation() {
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="sale-success" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
     </Stack>
   );
 }
@@ -58,8 +60,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <ShopProvider>
-          <StatusBar style="dark" />
-          <RootNavigation />
+          <CartProvider>
+            <StatusBar style="dark" />
+            <RootNavigation />
+          </CartProvider>
         </ShopProvider>
       </AuthProvider>
     </SafeAreaProvider>

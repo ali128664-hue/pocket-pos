@@ -29,9 +29,11 @@ import {
   Edit,
   PlusCircle,
   Sliders,
+  ShoppingCart,
 } from 'lucide-react-native';
 
 import { useShop } from '../../../src/context/ShopContext';
+import { useCart } from '../../../src/context/CartContext';
 import { lookupProductByBarcode } from '../../../src/services/product';
 import type { Product } from '../../../src/types/database';
 import { normalizeBarcode, formatBarcodeDisplay, validateBarcode } from '../../../src/utils/barcode';
@@ -56,6 +58,7 @@ export default function BarcodeScannerScreen() {
   const returnTo = params.returnTo;
 
   const { currentShop, isOwner } = useShop();
+  const { addToCart } = useCart();
   const [permission, requestPermission] = useCameraPermissions();
 
   const [torchEnabled, setTorchEnabled] = useState(false);
@@ -504,7 +507,21 @@ export default function BarcodeScannerScreen() {
             {/* Action Buttons */}
             <View style={styles.resultActions}>
               <Button
+                title="Add to Cart (+1)"
+                onPress={() => {
+                  addToCart(scanResult.product, 1);
+                  unlockScanner();
+                  if (returnTo === '/(tabs)/pos') {
+                    router.replace('/(tabs)/pos');
+                  }
+                }}
+                icon={<ShoppingCart size={18} color="#ffffff" />}
+                style={{ width: '100%', marginBottom: spacing.xs }}
+              />
+
+              <Button
                 title="Scan Next"
+                variant="outline"
                 onPress={unlockScanner}
                 style={styles.scanNextButton}
               />
