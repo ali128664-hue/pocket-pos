@@ -189,3 +189,15 @@ pocket-pos/
 - **Mobile Service Layer**: `apps/mobile/src/services/sales.ts` provides typed wrappers for atomic transactions.
 - **Quality Gates**: Type checking, linting, unit testing, and Android bundle compilation verified with zero errors.
 
+---
+
+## 8. Phase 4 Product Management Delivery Status
+
+- **Migration**: `supabase/migrations/20260927000003_phase4_product_management.sql` delivered.
+- **Atomic Stock Adjustment**: `adjust_product_stock` RPC manages quantity alterations, checks shop negative stock policy, and logs to `inventory_movements`.
+- **Safe Category Deletion**: `delete_category_safe` RPC guards against deleting categories with assigned items.
+- **Mobile Stack**: File-based stack navigator under `(tabs)/products/` with Product List, Category Manager, Add Product, Edit Product, and Manual Stock Adjustment screens.
+- **Storage Integration**: Product image upload via `apps/mobile/src/services/storage.ts` using Supabase Storage `shop-assets` bucket scoped per shop.
+- **Role Isolation**: Cashier view restricted to active items without cost visibility.
+
+

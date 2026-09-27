@@ -246,4 +246,7 @@ CREATE POLICY "Shop owners can delete expenses"
 - **Tenant Scope Enforcement**: All `SELECT`, `INSERT`, `UPDATE`, `DELETE` policies enforce `shop_id IN (SELECT public.get_auth_shop_ids())`.
 - **Owner Role Restrictions**: Administrative tables (`expenses`) and financial updates strictly guarded with `public.is_shop_owner(shop_id)`.
 - **Atomic Operations**: All financial operations (`complete_sale_transaction`, `record_customer_payment`) execute as `SECURITY DEFINER` functions with transaction isolation, authoritative server pricing calculation, row-level locking (`FOR UPDATE`), and shop tenant membership checks.
+- **Phase 4 RLS Tightening**: Cashier product visibility restricted to active products only (`is_active = TRUE OR public.is_shop_owner(shop_id)`). Manual inventory adjustments secured by `public.is_shop_owner(p_shop_id)` check in `adjust_product_stock`.
+- **Purchase Price Hiding**: Cashiers receive sanitized zeroed purchase prices in client queries, preventing cost margin exposure at the counter.
 - **Credential Hygiene**: Public anon key only in `.env.example`. Real `.env` excluded from version control.
+

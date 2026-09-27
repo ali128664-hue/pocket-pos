@@ -6,11 +6,14 @@ import type { Shop, UserShopMembership, CreateShopParams } from '../types/shop';
 interface ShopContextType {
   currentShop: Shop | null;
   memberships: UserShopMembership[];
+  currentRole: 'OWNER' | 'CASHIER' | null;
+  isOwner: boolean;
   isLoadingShop: boolean;
   hasShop: boolean;
   refreshShop: () => Promise<void>;
   createShop: (params: CreateShopParams) => Promise<{ shop: Shop | null; error: Error | null }>;
 }
+
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
@@ -123,15 +126,22 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const activeMemberships = user ? memberships : [];
     const isShopLoading = isAuthenticated && user ? (isAuthLoading || isLoadingShop) : false;
 
+    const activeRole = activeShop
+      ? activeMemberships.find((m) => m.shop_id === activeShop.id)?.role || 'CASHIER'
+      : null;
+
     return {
       currentShop: activeShop,
       memberships: activeMemberships,
+      currentRole: activeRole,
+      isOwner: activeRole === 'OWNER',
       isLoadingShop: isShopLoading,
       hasShop: Boolean(activeShop),
       refreshShop,
       createShop,
     };
   }, [user, currentShop, memberships, isAuthenticated, isAuthLoading, isLoadingShop, refreshShop, createShop]);
+
 
   return <ShopContext.Provider value={contextValue}>{children}</ShopContext.Provider>;
 };

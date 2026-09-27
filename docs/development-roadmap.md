@@ -80,13 +80,16 @@ flowchart TD
 - [x] Full TypeScript definitions and sales API service layer (`src/types/database.ts`, `src/services/sales.ts`).
 - [x] **Phase Gate**: 0 TypeScript errors, 0 lint warnings, Android bundle export verified, 5 automated test suites passing.
 
-#### Phase 4: Product Management
-- Build Products list screen with search, categories, and stock count badges.
-- Category management (add/edit category with color tag).
-- Product creation and editing forms (Name, Barcode, SKU, Buy Price, Sell Price, Stock, Min Stock, Unit).
-- Supabase Storage image upload for product photos.
-- Delete and deactivate product actions.
-- **Phase Gate**: Add, edit, search, filter, and upload images for products. Verify uniqueness constraints on barcode.
+#### Phase 4: Product Management (Completed)
+- [x] Build Products list screen with search, categories, and stock count badges.
+- [x] Category management (view, add, edit, safe delete, product count aggregation).
+- [x] Product creation and editing forms (Name, Barcode, SKU, Buy Price, Sell Price, Stock, Min Stock, Unit).
+- [x] Supabase Storage image upload for product photos (`shop-assets` isolated by shop).
+- [x] Product activation / deactivation workflow (preserves history, hides inactive items from cashiers).
+- [x] Concurrency-safe atomic stock adjustment RPC (`adjust_product_stock`) with full audit movement trail.
+- [x] Role-based field masking: Cashiers cannot view purchase cost or manage categories/stock.
+- [x] **Phase Gate**: Add, edit, search, filter, and upload images for products. Verify uniqueness constraints on barcode. 0 TypeScript errors, 0 lint warnings, clean Hermes export, 6 automated test suites passing.
+
 
 #### Phase 5: Mobile Barcode Scanner
 - Implement `expo-camera` barcode viewfinder with targeted reticle overlay.

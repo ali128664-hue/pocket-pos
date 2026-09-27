@@ -7,7 +7,9 @@ import {
   SafeAreaView,
   Alert,
   Image,
+  TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   LogOut,
   User,
@@ -17,6 +19,10 @@ import {
   Percent,
   Receipt,
   CheckCircle2,
+  Package,
+  Layers,
+  ArrowRight,
+  Plus,
 } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { useShop } from '../../src/context/ShopContext';
@@ -25,9 +31,11 @@ import { Card } from '../../src/components/ui/Card';
 import { colors, spacing, typography, borderRadius } from '../../src/constants/theme';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { user, profile, signOut } = useAuth();
-  const { currentShop, memberships } = useShop();
+  const { currentShop, memberships, isOwner } = useShop();
   const [isSigningOut, setIsSigningOut] = useState(false);
+
 
   const currentRole = memberships[0]?.role || 'OWNER';
 
@@ -61,8 +69,9 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Phase 2 Active</Text>
+            <Text style={styles.badgeText}>Phase 4 Active</Text>
           </View>
+
         </View>
 
         {/* Active Shop Information Card */}
@@ -130,6 +139,69 @@ export default function HomeScreen() {
             </View>
           </Card>
         )}
+
+        {/* Phase 4 Quick Actions */}
+        <Card style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Product & Inventory</Text>
+          <Text style={styles.quickActionsSubtitle}>
+            Manage items, categories, pricing, and stock levels
+          </Text>
+
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => router.push('/(tabs)/products')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.quickActionIcon}>
+                <Package size={22} color={colors.primary[600]} />
+              </View>
+              <View style={styles.quickActionTextContainer}>
+                <Text style={styles.quickActionName}>Products List</Text>
+                <Text style={styles.quickActionDesc}>Search, filter & adjust stock</Text>
+              </View>
+              <ArrowRight size={18} color={colors.neutral[400]} />
+            </TouchableOpacity>
+
+            {isOwner && (
+              <>
+                <View style={styles.quickActionDivider} />
+
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/(tabs)/products/categories')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.warning[50] }]}>
+                    <Layers size={22} color={colors.warning[600]} />
+                  </View>
+                  <View style={styles.quickActionTextContainer}>
+                    <Text style={styles.quickActionName}>Categories</Text>
+                    <Text style={styles.quickActionDesc}>Organize inventory groups</Text>
+                  </View>
+                  <ArrowRight size={18} color={colors.neutral[400]} />
+                </TouchableOpacity>
+
+                <View style={styles.quickActionDivider} />
+
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/(tabs)/products/add')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.success[50] }]}>
+                    <Plus size={22} color={colors.success[600]} />
+                  </View>
+                  <View style={styles.quickActionTextContainer}>
+                    <Text style={styles.quickActionName}>Add New Product</Text>
+                    <Text style={styles.quickActionDesc}>Upload image & barcode</Text>
+                  </View>
+                  <ArrowRight size={18} color={colors.neutral[400]} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </Card>
 
         {/* User Account & Security Card */}
         <Card style={styles.profileCard}>
@@ -352,7 +424,61 @@ const styles = StyleSheet.create({
   profileCard: {
     marginBottom: spacing.lg,
   },
+  quickActionsCard: {
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+  },
+  quickActionsTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    color: colors.text.primary,
+  },
+  quickActionsSubtitle: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+  },
+  quickActionsGrid: {
+    backgroundColor: colors.neutral[50],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    overflow: 'hidden',
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  quickActionTextContainer: {
+    flex: 1,
+  },
+  quickActionName: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
+  },
+  quickActionDesc: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    marginTop: 1,
+  },
+  quickActionDivider: {
+    height: 1,
+    backgroundColor: colors.neutral[200],
+    marginHorizontal: spacing.md,
+  },
   profileHeader: {
+
     flexDirection: 'row',
     alignItems: 'center',
   },
