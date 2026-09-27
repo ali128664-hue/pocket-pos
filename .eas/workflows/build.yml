@@ -3,7 +3,8 @@ name: Create Production Builds
 jobs:
   build_android:
     type: build
-    workingDirectory: apps/mobile
+    environment:
+      EAS_PROJECT_ROOT: apps/mobile
     params:
       platform: android
       profile: preview
