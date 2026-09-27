@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -14,14 +16,24 @@ import {
   ShoppingCart,
   User,
   Home,
+  Share2,
+  Send,
 } from 'lucide-react-native';
 
 import { Button } from '../src/components/ui/Button';
 import { Card } from '../src/components/ui/Card';
 import { colors, spacing, typography, borderRadius } from '../src/constants/theme';
+import { useShop } from '../src/context/ShopContext';
+import { fetchSaleDetails, type SaleDetailView } from '../src/services/sales';
+import {
+  generateReceiptText,
+  shareReceiptViaWhatsApp,
+  shareReceiptGeneral,
+} from '../src/services/receipt';
 
 export default function SaleSuccessScreen() {
   const router = useRouter();
+  const { currentShop } = useShop();
   const params = useLocalSearchParams<{
     saleId?: string;
     invoiceNumber?: string;
@@ -30,7 +42,11 @@ export default function SaleSuccessScreen() {
     creditAmount?: string;
     paymentStatus?: string;
     customerName?: string;
+    customerPhone?: string;
   }>();
+
+  const [saleDetail, setSaleDetail] = useState<SaleDetailView | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const invoiceNumber = params.invoiceNumber || 'INV-00000';
   const total = parseFloat(params.total || '0') || 0;
@@ -38,6 +54,59 @@ export default function SaleSuccessScreen() {
   const creditAmount = parseFloat(params.creditAmount || '0') || 0;
   const paymentStatus = params.paymentStatus || 'PAID';
   const customerName = params.customerName || null;
+  const customerPhone = params.customerPhone || null;
+
+  useEffect(() => {
+    if (params.saleId && currentShop?.id) {
+      fetchSaleDetails(currentShop.id, params.saleId).then(({ data }) => {
+        if (data) setSaleDetail(data);
+      });
+    }
+  }, [params.saleId, currentShop?.id]);
+
+  const getReceiptText = () => {
+    return generateReceiptText({
+      shopName: currentShop?.name || 'PocketPOS Store',
+      shopPhone: currentShop?.phone || null,
+      shopAddress: currentShop?.address || null,
+      invoiceNumber,
+      date: new Date(),
+      customerName,
+      customerPhone,
+      items: saleDetail?.items.map((it) => ({
+        name: it.product_name,
+        quantity: it.quantity,
+        unitPrice: it.unit_price,
+        total: it.line_total,
+      })),
+      subtotal: saleDetail ? saleDetail.subtotal : total,
+      discount: saleDetail ? saleDetail.discount : 0,
+      tax: saleDetail ? saleDetail.tax : 0,
+      total,
+      paidAmount,
+      creditAmount,
+    });
+  };
+
+  const handleShareWhatsApp = async () => {
+    setIsSharing(true);
+    try {
+      const receipt = getReceiptText();
+      await shareReceiptViaWhatsApp({
+        phone: customerPhone,
+        receiptText: receipt,
+      });
+    } catch {
+      Alert.alert('Notice', 'Unable to open WhatsApp. Standard share dialog used.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleShareGeneral = async () => {
+    const receipt = getReceiptText();
+    await shareReceiptGeneral(receipt);
+  };
 
   const formatPrice = (amount: number) => {
     return `Rs. ${amount.toLocaleString('en-PK', {
@@ -148,6 +217,29 @@ export default function SaleSuccessScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.whatsappBtn}
+            onPress={handleShareWhatsApp}
+            disabled={isSharing}
+          >
+            {isSharing ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <>
+                <Send size={18} color="#ffffff" style={{ marginRight: 8 }} />
+                <Text style={styles.whatsappBtnText}>Send Receipt via WhatsApp</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={handleShareGeneral}
+          >
+            <Share2 size={16} color={colors.neutral[700]} style={{ marginRight: 6 }} />
+            <Text style={styles.shareBtnText}>Share Digital Receipt</Text>
+          </TouchableOpacity>
+
           <Button
             title="Start New Sale"
             onPress={() => router.replace('/(tabs)/pos')}
@@ -161,7 +253,7 @@ export default function SaleSuccessScreen() {
               onPress={() => router.replace('/(tabs)/history')}
             >
               <Receipt size={16} color={colors.neutral[700]} style={{ marginRight: 6 }} />
-              <Text style={styles.outlineBtnText}>View Sales History</Text>
+              <Text style={styles.outlineBtnText}>Sales History</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -296,6 +388,41 @@ const styles = StyleSheet.create({
   actionsContainer: {
     width: '100%',
     maxWidth: 400,
+  },
+  whatsappBtn: {
+    backgroundColor: '#25D366',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs + 2,
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  whatsappBtnText: {
+    color: '#ffffff',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+    borderRadius: borderRadius.md,
+    backgroundColor: '#ffffff',
+    marginBottom: spacing.md,
+  },
+  shareBtnText: {
+    color: colors.neutral[700],
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
   },
   primaryBtn: {
     width: '100%',

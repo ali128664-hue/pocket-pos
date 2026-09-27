@@ -17,9 +17,10 @@ const mockProduct1: Product = {
   name: 'Shan Biryani Masala 50g',
   sku: 'SHAN-BIR-050',
   barcode: '8964000100101',
+  purchase_price: 110,
   selling_price: 150,
   current_stock: 45,
-  min_stock_level: 10,
+  minimum_stock: 10,
   is_active: true,
   category_id: null,
   brand: 'Shan Foods',
@@ -36,9 +37,10 @@ const mockProduct2: Product = {
   name: 'Olpers Milk 1 Litre Tetra Pak',
   sku: 'OLP-MILK-1000',
   barcode: '8964000200202',
+  purchase_price: 220,
   selling_price: 280,
   current_stock: 30,
-  min_stock_level: 5,
+  minimum_stock: 5,
   is_active: true,
   category_id: null,
   brand: 'Olpers',
@@ -55,9 +57,10 @@ const mockInactiveProduct: Product = {
   name: 'Discontinued Rooh Afza 800ml',
   sku: 'ROOH-800-DISC',
   barcode: '8964000300303',
+  purchase_price: 310,
   selling_price: 400,
   current_stock: 12,
-  min_stock_level: 2,
+  minimum_stock: 2,
   is_active: false,
   category_id: null,
   brand: 'Hamdard',
@@ -73,7 +76,11 @@ const mockCustomer: Customer = {
   shop_id: 's1111111-1111-4111-8111-111111111111',
   name: 'Tariq Mehmood',
   phone: '03001234567',
+  email: null,
+  address: null,
+  notes: null,
   outstanding_balance: 1500,
+  is_active: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -405,11 +412,11 @@ function assembleRpcPayload(
   }));
 
   return {
-    shopId,
-    customerId: customer ? customer.id : null,
+    shop_id: shopId,
+    customer_id: customer ? customer.id : null,
     items: itemsPayload,
     payments,
-    orderDiscount,
+    order_discount: orderDiscount,
     notes: notes.trim() || null,
   };
 }
@@ -423,13 +430,13 @@ const rpcPayload = assembleRpcPayload(
   'Deliver to shop counter'
 );
 
-assert.strictEqual(rpcPayload.shopId, 's1111111-1111-4111-8111-111111111111');
-assert.strictEqual(rpcPayload.customerId, mockCustomer.id);
+assert.strictEqual(rpcPayload.shop_id, 's1111111-1111-4111-8111-111111111111');
+assert.strictEqual(rpcPayload.customer_id, mockCustomer.id);
 assert.strictEqual(rpcPayload.items.length, 2);
 assert.strictEqual(rpcPayload.items[0].product_id, mockProduct1.id);
 assert.strictEqual(rpcPayload.items[0].quantity, 2);
 assert.strictEqual(rpcPayload.items[0].discount, 20);
-assert.strictEqual(rpcPayload.orderDiscount, 60);
+assert.strictEqual(rpcPayload.order_discount, 60);
 assert.strictEqual(rpcPayload.notes, 'Deliver to shop counter');
 assert.strictEqual(rpcPayload.payments.length, 2);
 
@@ -505,7 +512,11 @@ const customerShopA: Customer = {
   shop_id: shopAId,
   name: 'Customer A',
   phone: '03001111111',
+  email: null,
+  address: null,
+  notes: null,
   outstanding_balance: 0,
+  is_active: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -522,6 +533,12 @@ assert.strictEqual(
   validateShopBoundary(shopAId, customerShopA, cart),
   false,
   'Cart with products from shop s1111111 must fail validation when scoped to shopA'
+);
+
+assert.strictEqual(
+  validateShopBoundary(shopBId, customerShopA, cart),
+  false,
+  'Customer from shopA must fail validation when scoped to shopB'
 );
 
 console.log('✅ Multi-tenant shop scoping tests passed');

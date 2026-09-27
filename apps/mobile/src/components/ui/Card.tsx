@@ -1,14 +1,26 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp, TouchableOpacity } from 'react-native';
 import { colors, borderRadius, spacing } from '../../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  onPress?: () => void;
+  activeOpacity?: number;
 }
 
-
-export const Card: React.FC<CardProps> = ({ children, style }) => {
+export const Card: React.FC<CardProps> = ({ children, style, onPress, activeOpacity = 0.7 }) => {
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        style={[styles.card, style]}
+        onPress={onPress}
+        activeOpacity={activeOpacity}
+      >
+        {children}
+      </TouchableOpacity>
+    );
+  }
   return <View style={[styles.card, style]}>{children}</View>;
 };
 

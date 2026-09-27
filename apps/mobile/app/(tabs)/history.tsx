@@ -18,6 +18,8 @@ import {
   Search,
   User,
   X,
+  Share2,
+  Send,
 } from 'lucide-react-native';
 
 import { useShop } from '../../src/context/ShopContext';
@@ -27,6 +29,11 @@ import {
   type SaleListItem,
   type SaleDetailView,
 } from '../../src/services/sales';
+import {
+  generateReceiptText,
+  shareReceiptViaWhatsApp,
+  shareReceiptGeneral,
+} from '../../src/services/receipt';
 import { Card } from '../../src/components/ui/Card';
 import { colors, spacing, typography, borderRadius } from '../../src/constants/theme';
 
@@ -79,6 +86,63 @@ export default function SaleHistoryScreen() {
     } finally {
       setIsLoadingDetail(false);
     }
+  };
+
+  const handleShareWhatsApp = async (detail: SaleDetailView) => {
+    const text = generateReceiptText({
+      shopName: currentShop?.name || 'PocketPOS Store',
+      shopPhone: currentShop?.phone || null,
+      shopAddress: currentShop?.address || null,
+      invoiceNumber: detail.invoice_number,
+      date: new Date(detail.created_at),
+      customerName: detail.customer_name,
+      customerPhone: detail.customer_phone,
+      items: detail.items.map((it) => ({
+        name: it.product_name,
+        quantity: it.quantity,
+        unitPrice: it.unit_price,
+        total: it.line_total,
+      })),
+      subtotal: detail.subtotal,
+      discount: detail.discount,
+      tax: detail.tax,
+      total: detail.total,
+      paidAmount: detail.paid_amount,
+      creditAmount: detail.credit_amount,
+      notes: detail.notes,
+    });
+
+    await shareReceiptViaWhatsApp({
+      phone: detail.customer_phone,
+      receiptText: text,
+    });
+  };
+
+  const handleShareGeneral = async (detail: SaleDetailView) => {
+    const text = generateReceiptText({
+      shopName: currentShop?.name || 'PocketPOS Store',
+      shopPhone: currentShop?.phone || null,
+      shopAddress: currentShop?.address || null,
+      invoiceNumber: detail.invoice_number,
+      date: new Date(detail.created_at),
+      customerName: detail.customer_name,
+      customerPhone: detail.customer_phone,
+      items: detail.items.map((it) => ({
+        name: it.product_name,
+        quantity: it.quantity,
+        unitPrice: it.unit_price,
+        total: it.line_total,
+      })),
+      subtotal: detail.subtotal,
+      discount: detail.discount,
+      tax: detail.tax,
+      total: detail.total,
+      paidAmount: detail.paid_amount,
+      creditAmount: detail.credit_amount,
+      notes: detail.notes,
+    });
+
+    await shareReceiptGeneral(text);
   };
 
   const formatPrice = (amount: number) => {
@@ -348,6 +412,25 @@ export default function SaleHistoryScreen() {
                     </Text>
                   </View>
                 )}
+
+                <View style={styles.divider} />
+
+                {/* Share Actions */}
+                <TouchableOpacity
+                  style={styles.modalWhatsappBtn}
+                  onPress={() => handleShareWhatsApp(saleDetail)}
+                >
+                  <Send size={16} color="#ffffff" style={{ marginRight: 8 }} />
+                  <Text style={styles.modalWhatsappBtnText}>Share via WhatsApp</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalShareBtn}
+                  onPress={() => handleShareGeneral(saleDetail)}
+                >
+                  <Share2 size={16} color={colors.neutral[700]} style={{ marginRight: 6 }} />
+                  <Text style={styles.modalShareBtnText}>Share Digital Receipt</Text>
+                </TouchableOpacity>
               </ScrollView>
             )}
           </View>
@@ -622,5 +705,33 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     color: colors.neutral[900],
+  },
+  modalWhatsappBtn: {
+    backgroundColor: '#25D366',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  modalWhatsappBtnText: {
+    color: '#ffffff',
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+  },
+  modalShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+    borderRadius: borderRadius.md,
+    backgroundColor: '#ffffff',
+  },
+  modalShareBtnText: {
+    color: colors.neutral[700],
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
   },
 });

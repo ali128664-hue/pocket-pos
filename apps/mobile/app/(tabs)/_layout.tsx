@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, ShoppingCart, Package, Receipt } from 'lucide-react-native';
+import { LayoutDashboard, ShoppingCart, Package, Users, Receipt, Menu } from 'lucide-react-native';
 import { colors } from '../../src/constants/theme';
 
 export default function TabLayout() {
@@ -47,11 +47,29 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="customers"
+        options={{
+          title: 'Customers',
+          tabBarIcon: ({ color, size }) => (
+            <Users size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: 'Sales',
           tabBarIcon: ({ color, size }) => (
             <Receipt size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color, size }) => (
+            <Menu size={size} color={color} />
           ),
         }}
       />

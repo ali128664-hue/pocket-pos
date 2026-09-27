@@ -122,6 +122,17 @@ export interface CustomerPayment {
   created_at: string;
 }
 
+export interface CustomerLedgerEntry {
+  id: string;
+  type: 'DEBIT' | 'CREDIT';
+  amount: number;
+  date: string;
+  description: string;
+  reference_number?: string | null;
+  payment_method?: string | null;
+  sale_id?: string | null;
+}
+
 export interface InventoryMovement {
   id: string;
   shop_id: string;

@@ -202,6 +202,7 @@ export default function PosScreen() {
         creditAmount: String(result.credit_amount),
         paymentStatus: result.payment_status,
         customerName: customer?.name || '',
+        customerPhone: customer?.phone || '',
       },
     });
   };
