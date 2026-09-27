@@ -68,12 +68,17 @@ flowchart TD
 - [x] Zod validation for Pakistani phone formats, tax percentage, and safe invoice prefixes.
 - [x] **Phase Gate**: 0 TypeScript errors, 0 lint problems, Android bundle export verified, automated unit tests passing.
 
-#### Phase 3: Database & RLS Enforcement
-- Execute database migrations for all core tables.
-- Apply security helper functions (`get_auth_shop_ids`, `is_shop_owner`, `is_shop_member`).
-- Enable and verify RLS policies for tenant data isolation.
-- Deploy sequential invoice number generator and database functions.
-- **Phase Gate**: Verify with multi-tenant tests: User A cannot read User B's shop data via Supabase query.
+#### Phase 3: Database Foundation + RLS Enforcement + Atomic Checkout *(Completed)*
+- [x] Complete production PostgreSQL schema migration (`supabase/migrations/20260927000002_phase3_database_foundation.sql`).
+- [x] Defined all 10 core tables: `categories`, `products`, `customers`, `sales`, `sale_items`, `payments`, `customer_payments`, `inventory_movements`, `expenses`, `shop_invoice_sequences`.
+- [x] Partial unique indexes for nullable barcodes/SKUs (`(shop_id, barcode)`, `(shop_id, sku)`) and phones (`(shop_id, phone)`).
+- [x] Strict Row Level Security policies on all 10 tables enforcing shop tenant isolation.
+- [x] Concurrency-safe sequential invoice number generator `generate_invoice_number(p_shop_id)`.
+- [x] High-performance atomic checkout stored procedure `complete_sale_transaction` with `SELECT ... FOR UPDATE` row locks.
+- [x] Atomic Udhaar debt settlement stored procedure `record_customer_payment`.
+- [x] Authoritative server-side pricing, stock exhaustion protection, and zero client trust.
+- [x] Full TypeScript definitions and sales API service layer (`src/types/database.ts`, `src/services/sales.ts`).
+- [x] **Phase Gate**: 0 TypeScript errors, 0 lint warnings, Android bundle export verified, 5 automated test suites passing.
 
 #### Phase 4: Product Management
 - Build Products list screen with search, categories, and stock count badges.

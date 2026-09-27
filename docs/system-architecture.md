@@ -178,3 +178,14 @@ pocket-pos/
 │
 └── package.json                # Root npm/pnpm workspace config
 ```
+
+---
+
+## 7. Phase 3 Architecture Delivery Status
+
+- **Migration**: `supabase/migrations/20260927000002_phase3_database_foundation.sql` delivered.
+- **RPC Checkout Engine**: `complete_sale_transaction` implemented with row-level locks, authoritative price calculation, stock decrement, inventory movement auditing, tender verification, and customer ledger adjustments.
+- **Ledger Repayment Engine**: `record_customer_payment` implemented with atomic debit reduction and receipt tracking.
+- **Mobile Service Layer**: `apps/mobile/src/services/sales.ts` provides typed wrappers for atomic transactions.
+- **Quality Gates**: Type checking, linting, unit testing, and Android bundle compilation verified with zero errors.
+

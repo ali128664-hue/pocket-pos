@@ -237,3 +237,13 @@ CREATE POLICY "Shop owners can delete expenses"
    - Any sensitive admin tasks (e.g. user deletion) run via Edge Functions or authenticated RPCs using the session context `auth.uid()`.
 3. **Data Sanitization**:
    - All input forms (product creation, customer creation, expenses) are pre-validated via strict `zod` schemas before sending payloads to PostgreSQL.
+
+---
+
+## 6. Implementation Status & Phase 3 Security Audit
+
+- **Tables Protected**: 100% of public schema tables (`profiles`, `shops`, `shop_members`, `categories`, `products`, `customers`, `sales`, `sale_items`, `payments`, `customer_payments`, `inventory_movements`, `expenses`, `shop_invoice_sequences`) have `ENABLE ROW LEVEL SECURITY`.
+- **Tenant Scope Enforcement**: All `SELECT`, `INSERT`, `UPDATE`, `DELETE` policies enforce `shop_id IN (SELECT public.get_auth_shop_ids())`.
+- **Owner Role Restrictions**: Administrative tables (`expenses`) and financial updates strictly guarded with `public.is_shop_owner(shop_id)`.
+- **Atomic Operations**: All financial operations (`complete_sale_transaction`, `record_customer_payment`) execute as `SECURITY DEFINER` functions with transaction isolation, authoritative server pricing calculation, row-level locking (`FOR UPDATE`), and shop tenant membership checks.
+- **Credential Hygiene**: Public anon key only in `.env.example`. Real `.env` excluded from version control.

@@ -35,7 +35,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src app",
-    "test": "tsx src/__tests__/auth-verification.test.ts && tsx src/__tests__/session-persistence.test.ts && tsx src/__tests__/supabase-connection.test.ts && tsx src/__tests__/shop-onboarding.test.ts"
+    "test": "tsx src/__tests__/auth-verification.test.ts && tsx src/__tests__/session-persistence.test.ts && tsx src/__tests__/supabase-connection.test.ts && tsx src/__tests__/shop-onboarding.test.ts && tsx src/__tests__/database-foundation.test.ts"
   },
   "private": true
 }
