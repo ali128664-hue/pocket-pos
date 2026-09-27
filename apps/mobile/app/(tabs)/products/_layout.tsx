@@ -14,6 +14,7 @@ export default function ProductsLayout() {
       <Stack.Screen name="edit/[id]" />
       <Stack.Screen name="adjust-stock/[id]" />
       <Stack.Screen name="categories" />
+      <Stack.Screen name="scanner" />
     </Stack>
   );
 }

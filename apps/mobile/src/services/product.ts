@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { normalizeBarcode } from '../utils/barcode';
 import type {
   Product,
   CreateProductInput,
@@ -460,3 +461,111 @@ export async function adjustStock(
     return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
   }
 }
+
+/**
+ * Look up a product by exact barcode within the active shop.
+ * Guarantees role isolation: Cashiers receive purchase_price = 0.
+ */
+export async function lookupProductByBarcode(
+  shopId: string,
+  barcode: string,
+  isOwner = true
+): Promise<{ data: (Product & { category_name?: string | null }) | null; error: Error | null }> {
+  try {
+    const cleanBarcode = normalizeBarcode(barcode);
+    if (!cleanBarcode) {
+      return { data: null, error: new Error('Barcode cannot be empty') };
+    }
+
+    // 1. Primary Secure Path: RPC lookup_product_by_barcode
+    const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_product_by_barcode', {
+      p_shop_id: shopId,
+      p_barcode: cleanBarcode,
+    });
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      const row = rpcData[0];
+      return {
+        data: {
+          id: row.id,
+          shop_id: row.shop_id,
+          category_id: row.category_id,
+          name: row.name,
+          sku: row.sku,
+          barcode: row.barcode,
+          brand: row.brand,
+          description: row.description,
+          unit: row.unit || 'pcs',
+          purchase_price: Number(row.purchase_price) || 0,
+          selling_price: Number(row.selling_price),
+          current_stock: Number(row.current_stock),
+          minimum_stock: Number(row.minimum_stock),
+          image_url: row.image_url,
+          is_active: Boolean(row.is_active),
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          category_name: row.category_name || null,
+        },
+        error: null,
+      };
+    }
+
+    // If RPC returned empty list without error, it means product wasn't found
+    if (!rpcError && rpcData && rpcData.length === 0) {
+      return { data: null, error: null };
+    }
+
+    // 2. Fallback Path: Direct query with column-level projection
+    const selectCols = isOwner
+      ? 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, purchase_price, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)'
+      : 'id, shop_id, category_id, name, sku, barcode, brand, description, unit, selling_price, current_stock, minimum_stock, image_url, is_active, created_at, updated_at, categories(name)';
+
+    let query = supabase
+      .from('products')
+      .select(selectCols)
+      .eq('shop_id', shopId)
+      .eq('barcode', cleanBarcode);
+
+    if (!isOwner) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      return { data: null, error: new Error(error.message) };
+    }
+
+    if (!data) {
+      return { data: null, error: null };
+    }
+
+    const row = data as any;
+    return {
+      data: {
+        id: row.id,
+        shop_id: row.shop_id,
+        category_id: row.category_id,
+        name: row.name,
+        sku: row.sku,
+        barcode: row.barcode,
+        brand: row.brand,
+        description: row.description,
+        unit: row.unit || 'pcs',
+        purchase_price: isOwner ? Number(row.purchase_price) || 0 : 0,
+        selling_price: Number(row.selling_price),
+        current_stock: Number(row.current_stock),
+        minimum_stock: Number(row.minimum_stock),
+        image_url: row.image_url,
+        is_active: Boolean(row.is_active),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        category_name: row.categories?.name || null,
+      },
+      error: null,
+    };
+  } catch (err: any) {
+    return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+

@@ -16,6 +16,7 @@ interface InputProps extends TextInputProps {
   error?: string;
   hint?: string;
   leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
   isPassword?: boolean;
   containerStyle?: ViewStyle;
 }
@@ -25,6 +26,7 @@ export const Input: React.FC<InputProps> = ({
   error,
   hint,
   leftIcon,
+  rightIcon,
   isPassword = false,
   containerStyle,
   secureTextEntry,
@@ -70,6 +72,10 @@ export const Input: React.FC<InputProps> = ({
               <Eye size={20} color={colors.neutral[500]} />
             )}
           </TouchableOpacity>
+        )}
+
+        {!isPassword && rightIcon && (
+          <View style={styles.rightIconButton}>{rightIcon}</View>
         )}
       </View>
 

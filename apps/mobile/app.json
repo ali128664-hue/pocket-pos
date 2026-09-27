@@ -25,7 +25,13 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PocketPOS needs access to your camera to scan product barcodes."
+        }
+      ]
     ]
   }
 }

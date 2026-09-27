@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   XCircle,
   EyeOff,
+  ScanBarcode,
 } from 'lucide-react-native';
 
 import { useShop } from '../../../src/context/ShopContext';
@@ -157,15 +158,25 @@ export default function ProductListScreen() {
         )}
       </View>
 
-      {/* Search Input */}
+      {/* Search Input & Scan Button */}
       <View style={styles.searchBarContainer}>
-        <Input
-          placeholder="Search by name, SKU, or barcode..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          leftIcon={<Search size={18} color={colors.neutral[400]} />}
-          containerStyle={styles.searchInput}
-        />
+        <View style={styles.searchBarRow}>
+          <Input
+            placeholder="Search by name, SKU, or barcode..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            leftIcon={<Search size={18} color={colors.neutral[400]} />}
+            containerStyle={styles.searchInput}
+          />
+          <TouchableOpacity
+            style={styles.scanBarcodeButton}
+            onPress={() => router.push('/(tabs)/products/scanner')}
+            activeOpacity={0.8}
+            accessibilityLabel="Scan product barcode"
+          >
+            <ScanBarcode size={22} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Category Filter Pills */}
@@ -498,7 +509,22 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     backgroundColor: '#ffffff',
   },
+  searchBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   searchInput: {
+    flex: 1,
+    marginBottom: spacing.xs,
+  },
+  scanBarcodeButton: {
+    width: 46,
+    height: 46,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary[600],
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: spacing.xs,
   },
   filterSection: {

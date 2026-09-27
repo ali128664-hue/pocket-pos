@@ -21,6 +21,7 @@ import {
   DollarSign,
   AlertTriangle,
   Sliders,
+  ScanBarcode,
 } from 'lucide-react-native';
 import { useShop } from '../../../../src/context/ShopContext';
 import { fetchCategories } from '../../../../src/services/category';
@@ -38,7 +39,7 @@ import { colors, spacing, typography, borderRadius } from '../../../../src/const
 
 export default function EditProductScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, barcode: paramBarcode } = useLocalSearchParams<{ id: string; barcode?: string }>();
   const { currentShop, isOwner } = useShop();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +105,12 @@ export default function EditProductScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const [prevParamBarcode, setPrevParamBarcode] = useState(paramBarcode);
+  if (paramBarcode && paramBarcode !== prevParamBarcode) {
+    setPrevParamBarcode(paramBarcode);
+    setBarcode(paramBarcode);
+  }
 
   const handlePickImage = async () => {
     try {
@@ -407,6 +414,20 @@ export default function EditProductScreen() {
                 value={barcode}
                 onChangeText={setBarcode}
                 keyboardType="numeric"
+                rightIcon={
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(tabs)/products/scanner',
+                        params: { mode: 'fill', returnTo: `/(tabs)/products/edit/${id}` },
+                      })
+                    }
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityLabel="Scan barcode with camera"
+                  >
+                    <ScanBarcode size={20} color={colors.primary[600]} />
+                  </TouchableOpacity>
+                }
               />
             </View>
           </View>

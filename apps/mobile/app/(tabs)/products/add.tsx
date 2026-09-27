@@ -10,7 +10,7 @@ import {
   Alert,
   Switch,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   DollarSign,
   Package,
   AlertTriangle,
+  ScanBarcode,
 } from 'lucide-react-native';
 
 import { useShop } from '../../../src/context/ShopContext';
@@ -35,6 +36,7 @@ import { colors, spacing, typography, borderRadius } from '../../../src/constant
 
 export default function AddProductScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ barcode?: string }>();
   const { currentShop, isOwner } = useShop();
 
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
@@ -43,7 +45,7 @@ export default function AddProductScreen() {
   // Form states
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [barcode, setBarcode] = useState('');
+  const [barcode, setBarcode] = useState(params.barcode || '');
   const [brand, setBrand] = useState('');
   const [unit, setUnit] = useState('pcs');
   const [purchasePrice, setPurchasePrice] = useState('');
@@ -65,6 +67,12 @@ export default function AddProductScreen() {
       });
     }
   }, [currentShop]);
+
+  const [prevParamBarcode, setPrevParamBarcode] = useState(params.barcode);
+  if (params.barcode && params.barcode !== prevParamBarcode) {
+    setPrevParamBarcode(params.barcode);
+    setBarcode(params.barcode);
+  }
 
   const handlePickImage = async () => {
     try {
@@ -321,6 +329,20 @@ export default function AddProductScreen() {
                 onChangeText={setBarcode}
                 keyboardType="numeric"
                 error={errors.barcode}
+                rightIcon={
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(tabs)/products/scanner',
+                        params: { mode: 'fill', returnTo: '/(tabs)/products/add' },
+                      })
+                    }
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityLabel="Scan barcode with camera"
+                  >
+                    <ScanBarcode size={20} color={colors.primary[600]} />
+                  </TouchableOpacity>
+                }
               />
             </View>
           </View>
