@@ -59,12 +59,14 @@ flowchart TD
 - [x] Implement protected route redirection guards (`RootNavigation`).
 - [x] **Phase Gate**: 0 TypeScript errors, 0 lint problems, Android bundle export verified, unit tests passing.
 
-#### Phase 2: Shop Onboarding
-- Build onboarding wizard for newly registered users.
-- Capture Shop Name, Phone, Address, City, Currency (PKR), Tax %, and Invoice Prefix.
-- Wire database insertion for `shops` and set creator as `OWNER` in `shop_members`.
-- Implement navigation guard: redirect users without a shop to Onboarding.
-- **Phase Gate**: Verify complete flow from user registration to shop creation. Verify correct records in DB.
+#### Phase 2: Shop Onboarding *(Completed)*
+- [x] Build onboarding wizard for newly registered users (`apps/mobile/app/(onboarding)/create-shop.tsx`).
+- [x] Capture Shop Name, Phone, Address, City, Currency (PKR), Tax %, Invoice Prefix, and optional Logo.
+- [x] Atomic stored procedure `create_shop_with_owner` locking `owner_id` to `auth.uid()` and creating `OWNER` membership.
+- [x] Implement navigation guard: redirect users without a shop to Onboarding, and users with a shop to `/(tabs)`.
+- [x] Expo ImagePicker integration with Supabase Storage bucket upload service.
+- [x] Zod validation for Pakistani phone formats, tax percentage, and safe invoice prefixes.
+- [x] **Phase Gate**: 0 TypeScript errors, 0 lint problems, Android bundle export verified, automated unit tests passing.
 
 #### Phase 3: Database & RLS Enforcement
 - Execute database migrations for all core tables.

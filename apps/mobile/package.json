@@ -6,6 +6,7 @@
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.25",
     "expo-constants": "~57.0.19",
+    "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.11",
     "expo-router": "~57.0.23",
     "expo-secure-store": "~57.0.4",
@@ -20,6 +21,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
@@ -33,7 +35,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src app",
-    "test": "tsx src/__tests__/auth-verification.test.ts && tsx src/__tests__/session-persistence.test.ts"
+    "test": "tsx src/__tests__/auth-verification.test.ts && tsx src/__tests__/session-persistence.test.ts && tsx src/__tests__/supabase-connection.test.ts && tsx src/__tests__/shop-onboarding.test.ts"
   },
   "private": true
 }
