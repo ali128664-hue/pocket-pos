@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- POCKETPOS: Seed Mega Pakistani Catalog specifically for ali128664@gmail.com
--- Sets up Shop, Owner Role, and 70+ Bakery & Superstore Demo Products with Barcodes
+-- Clean and Safe Insert (Deletes existing products for this shop first, then inserts 70+ products)
 -- ==============================================================================
 
 DO $$
@@ -24,7 +24,7 @@ BEGIN
     WHERE lower(email) = lower('ali128664@gmail.com');
 
     IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'User with email ali128664@gmail.com was not found in auth.users. Please sign up with this email first!';
+        RAISE EXCEPTION 'User ali128664@gmail.com not found in auth.users. Please create or sign up this account first!';
     END IF;
 
     -- Ensure profile exists
@@ -40,7 +40,6 @@ BEGIN
     LIMIT 1;
 
     IF v_shop_id IS NULL THEN
-        -- Create shop
         INSERT INTO public.shops (owner_id, name, phone, city, address, invoice_prefix, tax_rate)
         VALUES (
             v_user_id,
@@ -53,7 +52,6 @@ BEGIN
         )
         RETURNING id INTO v_shop_id;
 
-        -- Create owner membership
         INSERT INTO public.shop_members (shop_id, user_id, role, is_active)
         VALUES (v_shop_id, v_user_id, 'OWNER', TRUE)
         ON CONFLICT (shop_id, user_id) DO UPDATE SET role = 'OWNER', is_active = TRUE;
@@ -104,7 +102,10 @@ BEGIN
     VALUES (v_shop_id, 'Jams, Honey & Spreads', 'Fruit jams, honey, hazelnut chocolate spread, mayonnaise')
     ON CONFLICT (shop_id, name) DO UPDATE SET updated_at = NOW() RETURNING id INTO v_cat_spreads_id;
 
-    -- 4. Insert 70+ Products with authentic Pakistani Barcodes
+    -- 4. Delete old demo products if any, to avoid duplicate barcode errors
+    DELETE FROM public.products WHERE shop_id = v_shop_id;
+
+    -- 5. Insert 70+ Products cleanly
     INSERT INTO public.products (
         shop_id, category_id, name, sku, barcode, brand, unit, purchase_price, selling_price, current_stock, minimum_stock
     ) VALUES
@@ -197,13 +198,7 @@ BEGIN
     (v_shop_id, v_cat_spreads_id, 'Shezan Mango Jam (440g Bottle)', 'SHZ-JAM-440', '8964001010027', 'Shezan', 'jar', 270.00, 330.00, 20.000, 5.000),
     (v_shop_id, v_cat_spreads_id, 'Marhaba Natural Pure Honey (250g)', 'MRH-HNY-250', '8964001010034', 'Marhaba', 'jar', 360.00, 450.00, 15.000, 4.000),
     (v_shop_id, v_cat_spreads_id, 'Nutella Hazelnut Cocoa Spread (350g)', 'NUT-SPR-350', '8964001010041', 'Ferrero', 'jar', 950.00, 1200.00, 12.000, 3.000),
-    (v_shop_id, v_cat_spreads_id, 'Youngs Mayonnaise (Classic 500ml Pouch)', 'YNG-MAY-500', '8964001010058', 'Youngs', 'pouch', 340.00, 400.00, 30.000, 8.000)
-
-    ON CONFLICT (shop_id, barcode) DO UPDATE SET
-        selling_price = EXCLUDED.selling_price,
-        current_stock = EXCLUDED.current_stock,
-        brand = EXCLUDED.brand,
-        updated_at = NOW();
+    (v_shop_id, v_cat_spreads_id, 'Youngs Mayonnaise (Classic 500ml Pouch)', 'YNG-MAY-500', '8964001010058', 'Youngs', 'pouch', 340.00, 400.00, 30.000, 8.000);
 
     RAISE NOTICE 'SUCCESS: 70+ Products & 10 Categories linked to ali128664@gmail.com Shop ID %', v_shop_id;
 END $$;
