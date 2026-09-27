@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PocketPOS",
-    "slug": "pocket-pos",
+    "slug": "pocketshop",
     "scheme": "pocketpos",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,9 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -37,6 +39,13 @@
           "cameraPermission": "PocketPOS needs access to your camera to scan product barcodes."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9e14e1df-cd22-4882-9f63-9050b5989977"
+      }
+    },
+    "owner": "hussainxsolutions-team"
   }
 }
